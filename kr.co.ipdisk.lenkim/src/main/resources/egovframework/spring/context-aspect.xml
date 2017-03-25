@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+        http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.0.xsd">
+
+<!-- 
+	AOP(Aspect Oriented Programming)는 관점지향 프로그래밍으로
+	기존의 OOP(객체지향프로그래밍:Object Oriented Programming)를 보다 효율적으로 사용하게 하기 위한 기술이다.
+	
+	예를 들어 기존에는 공통적으로 사용되는 메소드를 분리하여 필요할 때마다 new 메소드명 을 사용하여
+	호출하여 사용했다.(OOP방식) 하지만 AOP를 적용하면 이렇게 공통적으로 사용되는 메소드들을 xml 설정만으로 사용이 가능하게 된다. 
+	
+	AOP의 사용은 <aop:config></aop:config> 태그로 사용한다.
+	이 사이에 pointcut 설정으로 호출가능한 비지니스 메소드를 필터링 하고
+	aspect 설정으로 어느시점에 어떤 메소드를 사용할 지 설정한다.
+	
+	여기서의 시점은 5가지가 제공된다.
+	before : 메소드 실행 전
+	after-returning : 메소드가 성공적으로 리턴되는 시점
+	after-throwing 메소드 실행중 exception이 발생되는 시점
+	after : 위의 두가지를 포함
+	around : before + after, 메소드에 실행 전후 동작 가능
+ -->
+    
+	<aop:config>
+		<aop:pointcut id="serviceMethod" expression="execution(* egovframework.example..impl.*Impl.*(..))" />
+
+		<aop:aspect ref="exceptionTransfer">
+			<aop:after-throwing throwing="exception" pointcut-ref="serviceMethod" method="transfer" />
+		</aop:aspect>
+	</aop:config>
+	
+	<bean id="exceptionTransfer" class="egovframework.rte.fdl.cmmn.aspect.ExceptionTransfer">
+		<property name="exceptionHandlerService">
+			<list>
+				<ref bean="defaultExceptionHandleManager" />
+				<ref bean="otherExceptionHandleManager" />
+			</list>
+		</property>
+	</bean>
+
+	<bean id="defaultExceptionHandleManager" class="egovframework.rte.fdl.cmmn.exception.manager.DefaultExceptionHandleManager">
+		<property name="reqExpMatcher">
+			<ref bean="antPathMater"/>
+		</property>
+		<property name="patterns">
+			<list>
+				<value>**service.impl.*</value>
+			</list>
+		</property>
+		<property name="handlers">
+			<list>
+				<ref bean="egovHandler" />
+			</list>
+		</property>
+	</bean>
+
+	<bean id="otherExceptionHandleManager" class="egovframework.rte.fdl.cmmn.exception.manager.DefaultExceptionHandleManager">
+		<property name="reqExpMatcher">
+			<ref bean="antPathMater"/>
+		</property>
+		<property name="patterns">
+			<list>
+				<value>**service.impl.*</value>
+			</list>
+		</property>
+		<property name="handlers">
+			<list>
+				<ref bean="otherHandler" />
+			</list>
+		</property>
+	</bean>
+
+	<bean id="egovHandler" class="egovframework.example.cmmn.EgovSampleExcepHndlr" />
+	<bean id="otherHandler" class="egovframework.example.cmmn.EgovSampleOthersExcepHndlr" />	
+	
+</beans>
